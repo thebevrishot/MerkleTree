@@ -25,7 +25,7 @@ int main(){
 	vector<ProofNode> proof = mtree.proof(sample_leaf);
 
 	// verify proof
-	bool verified = mtree.verifyProof(sample_leaf,root,proof);
+	bool verified = verifyProof(sample_leaf,root,proof);
 }
 
 ```

@@ -1,4 +1,4 @@
-# Usage
+## Usage
 
 ```cpp
 
@@ -29,3 +29,7 @@ int main(){
 }
 
 ```
+## To-do
+
+## Inspiration
+https://github.com/blockai/merkletree

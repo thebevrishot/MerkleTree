@@ -22,6 +22,6 @@ int main(){
   //printf("root: %s\n",mtree.root());
 
 	// verify proof
-	bool verified = mtree.verifyProof(sample_leaf,root,proof);
+	bool verified = verifyProof(sample_leaf,root,proof);
   //printf("ver: %d\n",verified);
 }

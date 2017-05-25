@@ -12,6 +12,60 @@ struct ProofNode{
   ProofNode(char* _left,char* _right,char* _parent):left(_left),right(_right),parent(_parent){}
 };
 
+// combin and hash by sha256
+static void combin(char* leftData,char* rightData,char out_buff[65]){
+  //concat
+  char buff[strlen((const char*)leftData)+strlen((const char*)rightData)+1];
+  memcpy(buff,leftData,strlen((const char*)leftData));
+  memcpy(buff+strlen((const char*)leftData),rightData,strlen((const char*)rightData));
+
+  buff[strlen((const char*)leftData)+strlen((const char*)rightData)] = 0;
+
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+  SHA256_CTX sha256;
+  SHA256_Init(&sha256);
+  SHA256_Update(&sha256, buff, strlen(buff));
+  SHA256_Final(hash, &sha256);
+
+  for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
+  {
+    sprintf(out_buff + (i * 2), "%02x", hash[i]);
+  }
+  out_buff[65] = 0;
+}
+
+bool verifyProof(char* leaf,char* expectedMerkleRoot,vector<ProofNode> proofArr){
+  if(proofArr.size() ==0 ){
+    if( strcmp(leaf,expectedMerkleRoot)==0)
+      return true;
+    return false;
+  }
+
+  // the merkle root should be the parent of the last part
+  char* actualMekleRoot = proofArr[proofArr.size() -1].parent;
+
+  if( strcmp(actualMekleRoot,expectedMerkleRoot)!=0 )
+    return false;
+
+  char* prevParent = leaf;
+  for(int pIdx =0;pIdx<proofArr.size();pIdx++){
+    ProofNode part = proofArr[pIdx];
+
+    if( strcmp(part.left,prevParent)!=0 && strcmp(part.right,prevParent)!=0)
+      return false;
+    char *parentData = new char[65];
+    combin(part.left,part.right,parentData);
+
+    // Parent in proof is incorrect
+    if( strcmp(parentData,part.parent) != 0 )
+      return false;
+
+    prevParent = parentData;
+  }
+
+  return strcmp(prevParent,expectedMerkleRoot) == 0;
+}
+
 class merkletree{
 public:
   vector<char*> tree;
@@ -43,27 +97,7 @@ public:
     //memcpy(out_buff,buffx,65);
   }
 
-  // combin and hash by sha256
-  static void combin(char* leftData,char* rightData,char out_buff[65]){
-    //concat
-    char buff[strlen((const char*)leftData)+strlen((const char*)rightData)+1];
-    memcpy(buff,leftData,strlen((const char*)leftData));
-    memcpy(buff+strlen((const char*)leftData),rightData,strlen((const char*)rightData));
 
-    buff[strlen((const char*)leftData)+strlen((const char*)rightData)] = 0;
-
-    unsigned char hash[SHA256_DIGEST_LENGTH];
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, buff, strlen(buff));
-    SHA256_Final(hash, &sha256);
-
-    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-    {
-      sprintf(out_buff + (i * 2), "%02x", hash[i]);
-    }
-    out_buff[65] = 0;
-  }
 
   vector<char*> computeTree(void (*combineFn)(char*,char*,char*),vector<char*> leaves){
     // compute nodeCount and create vector<T> tree
@@ -95,7 +129,7 @@ public:
 
   vector<ProofNode> proof(char* leafData){
     int idx = findLeaf(tree,leafData);
-   // printf("idx %d\n",idx);
+    //printf("idx %d\n",idx);
     if(idx == -1)
       return vector<ProofNode>();
     int proofArrSize = floor( log(tree.size())/ log(2) );
@@ -119,37 +153,7 @@ public:
     return proof;
   }
 
-  bool verifyProof(char* leaf,char* expectedMerkleRoot,vector<ProofNode> proofArr){
-    if(!proofArr.size()){
-      if( strcmp(leaf,expectedMerkleRoot))
-        return true;
-      return false;
-    }
 
-    // the merkle root should be the parent of the last part
-    char* actualMekleRoot = proofArr[proofArr.size() -1].parent;
-
-    if( strcmp(actualMekleRoot,expectedMerkleRoot)!=0 )
-      return false;
-
-    char* prevParent = leaf;
-    for(int pIdx =0;pIdx<proofArr.size();pIdx++){
-      ProofNode part = proofArr[pIdx];
-
-      if( strcmp(part.left,prevParent)!=0 && strcmp(part.right,prevParent)!=0)
-        return false;
-      char *parentData = new char[65];
-      combin(part.left,part.right,parentData);
-
-      // Parent in proof is incorrect
-      if( strcmp(parentData,part.parent) != 0 )
-        return false;
-
-      prevParent = parentData;
-    }
-
-    return strcmp(prevParent,expectedMerkleRoot) == 0;
-  }
 
 
 };

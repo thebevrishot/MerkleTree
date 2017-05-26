@@ -18,7 +18,7 @@ static void combin(char* leftData,char* rightData,char out_buff[65]){
   char buff[strlen((const char*)leftData)+strlen((const char*)rightData)+1];
   memcpy(buff,leftData,strlen((const char*)leftData));
   memcpy(buff+strlen((const char*)leftData),rightData,strlen((const char*)rightData));
-
+	//printf("vs");
   buff[strlen((const char*)leftData)+strlen((const char*)rightData)] = 0;
 
   unsigned char hash[SHA256_DIGEST_LENGTH];
@@ -152,8 +152,35 @@ public:
 //	vector<ProofNode> proof;
     return proof;
   }
+	void pushleaf(char* leaf){
+		pushleafworker(combin,leaf);
+	}
 
 
+	void pushleafworker(void (*combineFn)(char*,char*,char*),char* leaf){
+
+		// push two
+		tree.push_back(new char[65]);
+		tree.push_back(new char[65]);
+
+		int pidx = getParent(tree,tree.size()-1);
+
+		// push parent and newleaf
+		memcpy(tree[tree.size()-2],tree[pidx],65);
+		memcpy(tree[tree.size()-1],leaf,65);;
+
+		// climb up and compute
+		int idx = tree.size()-1;
+		while(idx > 0){
+			idx = getParent(tree,idx);
+			//cout<<&combineFn<<'\n';
+      char *buff = new char[65];
+      combineFn(tree[getLeft(tree,idx)],tree[getRight(tree,idx)],buff);
+      tree[idx] = buff;
+		}
+
+		// done!
+	}
 
 
 };

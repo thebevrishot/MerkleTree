@@ -19,9 +19,23 @@ int main(){
 	// get proof
 	char* sample_leaf = leaves[0];
 	vector<ProofNode> proof = mtree.proof(sample_leaf);
-  //printf("root: %s\n",mtree.root());
+  	printf("root: %s\n",mtree.root());
 
 	// verify proof
 	bool verified = verifyProof(sample_leaf,root,proof);
-  //printf("ver: %d\n",verified);
+  	printf("ver: %d\n",verified);
+
+	// Push leaf
+	// This will change value of some nodes
+	char* newleaf = "370b126df07859afa569cd82582bc43dfb2ce3ba8069dbbcbef6b7215b7a76c6"; // sha256 of "anakin"
+	mtree.pushleaf(newleaf);
+
+	char* newroot = mtree.root();
+	printf("new root : %s\n",mtree.root());
+
+	// verify new leaf
+	vector<ProofNode> newproof = mtree.proof(newleaf);
+	bool newverified = verifyProof(newleaf,newroot,newproof);
+
+	printf("new ver : %d\n",newverified);
 }

@@ -1,6 +1,8 @@
 #include "merkletree.h"
 #include <time.h>
 
+#define TEST_INSERT 1
+
 using namespace std;
 
 void calSHA256(char* inp,char out_buff[65]){
@@ -23,11 +25,13 @@ int main(){
 
   int Leaf;
   scanf("%d",&Leaf);
-  for(int i=0;i<33554432;i++);
+//  for(int i=0;i<33554432;i++);
 
-  vector<char*> v(Leaf);
 
-  for(int i =0;i<Leaf;i++){
+
+  vector<char*> v(Leaf-TEST_INSERT);
+
+  for(int i =0;i<Leaf-TEST_INSERT;i++){
     char *buff = new char[65];
     scanf("%65s\n",buff );
     v[i] = buff;
@@ -36,6 +40,17 @@ int main(){
 	clock_t t;
 	t = clock();
   merkletree mtree = merkletree(v);
+
+
+  for(int i=Leaf-TEST_INSERT;i<Leaf;i++){
+	  char* buff = new char[65];
+	  scanf("%65s\n",buff);
+	  v.push_back(buff);
+	  mtree.pushleaf(v[i]);
+
+  }
+
+
 
   printf("root : %s\n",mtree.root());
 	t = clock() - t;
@@ -78,9 +93,9 @@ int main(){
 
         t = clock();
 
-              bool verproof = verifyProof(leaf,mtree.root(),proof);
+    //          bool verproof = verifyProof(leaf,mtree.root(),proof);
 
-            //  bool verproof = mtree.verifyProof(leaf,mtree.root(),proof);
+              bool verproof = verifyProof(leaf,mtree.root(),proof);
 
               t = clock() - t;
               printf("[verify proof][ =< %d ] took %d clocks (%f secs)\n",verproof,t,(float)t/CLOCKS_PER_SEC);

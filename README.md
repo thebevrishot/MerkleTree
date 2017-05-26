@@ -1,3 +1,6 @@
+## New Feature
+Push new leaf to merkletree
+
 ## Usage
 
 ```cpp

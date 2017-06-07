@@ -1,6 +1,5 @@
 ## New Feature
 Serialize proof to string and deserialize back to vector<ProofNode>
-Push new leaf to merkletree
 
 ## Usage
 

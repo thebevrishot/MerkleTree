@@ -49,17 +49,10 @@ vector<ProofNode> deserialize(char* strdata) // Reads the given file and assigns
 
 // combin and hash by sha256
 static void combin(char* leftData,char* rightData,char out_buff[65]){
-  //concat
-  //char buff[strlen((const char*)leftData)+strlen((const char*)rightData)+1];
-  //memcpy(buff,leftData,strlen((const char*)leftData));
-  //memcpy(buff+strlen((const char*)leftData),rightData,strlen((const char*)rightData));
-	//printf("vs");
-  //buff[strlen((const char*)leftData)+strlen((const char*)rightData)] = 0;
 
   unsigned char hash[SHA256_DIGEST_LENGTH];
   SHA256_CTX sha256;
   SHA256_Init(&sha256);
-  // SHA256_Update(&sha256, buff, strlen(buff));
   SHA256_Update(&sha256,leftData,strlen((const char*)leftData) );
   SHA256_Update(&sha256,rightData,strlen((const char*)rightData) );
   SHA256_Final(hash, &sha256);
@@ -68,7 +61,7 @@ static void combin(char* leftData,char* rightData,char out_buff[65]){
   {
     sprintf(out_buff + (i * 2), "%02x", hash[i]);
   }
-  out_buff[65] = 0;
+  out_buff[64] = 0;
 }
 
 bool verifyProof(char* leaf,char* expectedMerkleRoot,vector<ProofNode> proofArr){
@@ -130,8 +123,7 @@ public:
     {
       sprintf(out_buff + (i * 2), "%02x", hash[i]);
     }
-    out_buff[65] = 0;
-    //memcpy(out_buff,buffx,65);
+    out_buff[64] = 0;
   }
 
 
@@ -143,24 +135,20 @@ public:
     vector<char*> tree(nodeCount);
 
     // deep copy
-    // copy(leaves.begin(),leaves.end(),tree.begin()+delta);
     for(int i = 0 ;i<leaves.size();i++){
         tree[delta + i] = new char[65];
         memcpy(tree[delta + i],leaves[i],65);
+        tree[delta + i][64] = 0;
     }
 
     int idx = nodeCount-1;
     while(idx > 0){
       int parent = (idx -1)/2;
 
-      //char*
       tree[parent] = new char[65];
       combineFn(tree[idx-1],tree[idx],tree[parent]);
-      //cout<<"pass "<<&tree[parent]<<'\n';
+      tree[parent][64] = 0;
 
-      //tree[parent] = combinVal;
-
-      //printf("%s %s\n",combinVal,tree[parent]);
       idx-=2;
     }
 
@@ -176,7 +164,6 @@ public:
       return vector<ProofNode>();
     int proofArrSize = floor( log(tree.size())/ log(2) );
 
-//    printf("proofArrSize : %d\n",proofArrSize);
     vector<ProofNode> proof(proofArrSize);
     int proofIdx = 0;
     while(idx > 0 ){
@@ -187,11 +174,9 @@ public:
       proof[proofIdx++] = ProofNode(tree[left],tree[right],tree[idx]);
     }
 
-//	printf("prooffIdx :%d \n",proofIdx);
 
 	proof.resize(proofIdx);
 
-//	vector<ProofNode> proof;
     return proof;
   }
 	void pushleaf(char* leaf){
@@ -209,7 +194,7 @@ public:
 
 		// push parent and newleaf
 		memcpy(tree[tree.size()-2],tree[pidx],65);
-		memcpy(tree[tree.size()-1],leaf,65);;
+		memcpy(tree[tree.size()-1],leaf,65);
 
 		// climb up and compute
 		int idx = tree.size()-1;

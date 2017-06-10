@@ -146,7 +146,7 @@ public:
     // copy(leaves.begin(),leaves.end(),tree.begin()+delta);
     for(int i = 0 ;i<leaves.size();i++){
         tree[delta + i] = new char[65];
-        memcpy(tree[delta + i],leaves[i],64);
+        memcpy(tree[delta + i],leaves[i],65);
     }
 
     int idx = nodeCount-1;

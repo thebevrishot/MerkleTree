@@ -50,16 +50,18 @@ vector<ProofNode> deserialize(char* strdata) // Reads the given file and assigns
 // combin and hash by sha256
 static void combin(char* leftData,char* rightData,char out_buff[65]){
   //concat
-  char buff[strlen((const char*)leftData)+strlen((const char*)rightData)+1];
-  memcpy(buff,leftData,strlen((const char*)leftData));
-  memcpy(buff+strlen((const char*)leftData),rightData,strlen((const char*)rightData));
+  //char buff[strlen((const char*)leftData)+strlen((const char*)rightData)+1];
+  //memcpy(buff,leftData,strlen((const char*)leftData));
+  //memcpy(buff+strlen((const char*)leftData),rightData,strlen((const char*)rightData));
 	//printf("vs");
-  buff[strlen((const char*)leftData)+strlen((const char*)rightData)] = 0;
+  //buff[strlen((const char*)leftData)+strlen((const char*)rightData)] = 0;
 
   unsigned char hash[SHA256_DIGEST_LENGTH];
   SHA256_CTX sha256;
   SHA256_Init(&sha256);
-  SHA256_Update(&sha256, buff, strlen(buff));
+  // SHA256_Update(&sha256, buff, strlen(buff));
+  SHA256_Update(&sha256,leftData,strlen((const char*)leftData) );
+  SHA256_Update(&sha256,rightData,strlen((const char*)rightData) );
   SHA256_Final(hash, &sha256);
 
   for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)

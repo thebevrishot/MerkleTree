@@ -140,7 +140,13 @@ public:
     int delta = nodeCount - leaves.size();
     vector<char*> tree(nodeCount);
 
-    copy(leaves.begin(),leaves.end(),tree.begin()+delta);
+    // deep copy
+    // copy(leaves.begin(),leaves.end(),tree.begin()+delta);
+    for(int i = 0 ;i<leaves.size();i++){
+        printf("%d\n",i);
+        tree[delta + i] = new char[65];
+        memcpy(tree[delta + i],leaves[i],64);
+    }
 
     int idx = nodeCount-1;
     while(idx > 0){

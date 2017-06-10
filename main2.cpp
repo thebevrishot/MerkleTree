@@ -2,6 +2,7 @@
 #include <time.h>
 
 #define TEST_INSERT 1
+#define DUMP_TREE
 
 using namespace std;
 
@@ -41,6 +42,8 @@ int main(){
 	t = clock();
   merkletree mtree = merkletree(v);
 
+  printf("maked merkle\n");
+
 
   for(int i=Leaf-TEST_INSERT;i<Leaf;i++){
 	  char* buff = new char[65];
@@ -49,6 +52,15 @@ int main(){
 	  mtree.pushleaf(v[i]);
 
   }
+
+#ifdef DUMP_TREE
+  for(int i=0;i<v.size();i++)
+      printf("leave : %s\n",v[i]);
+  for(int i=0;i<mtree.tree.size();i++)
+      printf("node : %s\n",mtree.tree[i]);
+#endif
+
+  
 
 
 
@@ -82,14 +94,14 @@ int main(){
 
       for(int i=0;i<mtree.size();i++){
         char* leaf = mtree.tree[i];
-        vector<ProofNode> old_proof = mtree.proof(leaf);
+        vector<ProofNode> proof = mtree.proof(leaf);
 
       //	for(int i = 0 ;i<proof.size();i++){
       //		printf("parent : %s\nleft : %s\nright : %s\n",proof[i].parent,proof[i].right,proof[i].left);
       //	
   
-	char *sr = serialize(old_proof);
-	vector<ProofNode> proof = deserialize(sr);
+//	char *sr = serialize(old_proof);
+//	vector<ProofNode> proof = deserialize(sr);
 
         t = clock() - t;
         //printf("[get proof] took %d clocks (%f secs)\n",t,(float)t/CLOCKS_PER_SEC);

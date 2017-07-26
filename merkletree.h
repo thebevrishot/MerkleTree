@@ -2,46 +2,39 @@
 #include <string.h>
 #include <iostream>
 #include <openssl/sha.h>
+#include <cstdio>
 
 #define SHA256_LENGTH 64
+#define NODE_LENGTH 65
+
 using namespace std;
 
-struct ProofNode{
-  char *left,*right,*parent;
-  ProofNode():left(""),right(""),parent(""){}
-  ProofNode(char* _left,char* _right,char* _parent):left(_left),right(_right),parent(_parent){}
+struct ProofNode {
+  char* hash;
+  bool isRight;
+  ProofNode(){isRight= false;hash = new char[SHA256_LENGTH];}
 };
 
 // buff 
 char* serialize(vector<ProofNode>& proof) // Writes the given OBJECT data to the given file name.
 {
-	char *buff = new char[proof.size()*SHA256_LENGTH*3+1];
-	buff[proof.size()*SHA256_LENGTH*3]=0;
+	char *buff = new char[proof.size()*NODE_LENGTH+1];
+	buff[proof.size()*NODE_LENGTH]=0;
 	for(int i =0;i<proof.size();i++){
-		memcpy(buff+SHA256_LENGTH*(3*i),proof[i].left,SHA256_LENGTH);
-		memcpy(buff+SHA256_LENGTH*(3*i + 1),proof[i].right,SHA256_LENGTH);
-		memcpy(buff+SHA256_LENGTH*(3*i + 2),proof[i].parent,SHA256_LENGTH);
+		memcpy(buff+NODE_LENGTH*i+1,proof[i].hash,SHA256_LENGTH);
+    buff[NODE_LENGTH*i] = proof[i].isRight? '1':'0';
 	}
 	return buff;
 };
 
-vector<ProofNode> deserialize(char* strdata) // Reads the given file and assigns the data to the given OBJECT.
+vector<ProofNode> deserialize(const char* strdata) // Reads the given file and assigns the data to the given OBJECT.
 {
 	size_t datalen = strlen(strdata);
-	vector<ProofNode> proof(datalen/3/SHA256_LENGTH);
-		
+	vector<ProofNode> proof(datalen/NODE_LENGTH);
+
 	for(int i = 0 ;i<proof.size();i++){
-		char *left = new char[SHA256_LENGTH+1],
-		*right = new char[SHA256_LENGTH+1],
-		*parent = new char[SHA256_LENGTH+1];
-		left[SHA256_LENGTH] = 0;
-		right[SHA256_LENGTH] = 0;
-		parent[SHA256_LENGTH] = 0;
-		memcpy(left,strdata+SHA256_LENGTH*(3*i),SHA256_LENGTH);
-		memcpy(right,strdata+SHA256_LENGTH*(3*i + 1),SHA256_LENGTH);
-		memcpy(parent,strdata+SHA256_LENGTH*(3*i + 2),SHA256_LENGTH);
-		
-		proof[i] = ProofNode(left,right,parent);
+		memcpy(proof[i].hash,strdata+NODE_LENGTH*i+1,SHA256_LENGTH);
+    proof[i].isRight = strdata[NODE_LENGTH*i]!='0';
 	}
 
 	return proof;
@@ -64,44 +57,42 @@ static void combin(char* leftData,char* rightData,char out_buff[65]){
   out_buff[64] = 0;
 }
 
-bool verifyProof(char* leaf,char* expectedMerkleRoot,vector<ProofNode> proofArr){
-  if(proofArr.size() ==0 ){
+bool verifyProof(char* verifyLeaf,char* expectedMerkleRoot,vector<ProofNode> proof){
+
+  size_t vLeafLen = strlen(verifyLeaf);
+  char* leaf = (char*)malloc(vLeafLen+1);
+  memcpy(leaf,verifyLeaf,vLeafLen);
+  if(proof.size() ==0 ){
     if( strcmp(leaf,expectedMerkleRoot)==0)
       return true;
     return false;
   }
-
+ 
   // the merkle root should be the parent of the last part
-  char* actualMekleRoot = proofArr[proofArr.size() -1].parent;
-
+  char* actualMekleRoot = proof[proof.size() -1].hash;
+ 
   if( strcmp(actualMekleRoot,expectedMerkleRoot)!=0 )
     return false;
 
-  char* prevParent = leaf;
-  for(int pIdx =0;pIdx<proofArr.size();pIdx++){
-    ProofNode part = proofArr[pIdx];
+  for(int pIdx =0;pIdx<proof.size()-1;pIdx++){
+  
+    if (proof[pIdx].isRight){
+      combin(leaf,proof[pIdx].hash,leaf);
+    }else{
+      combin(proof[pIdx].hash,leaf,leaf);
+    }
 
-    if( strcmp(part.left,prevParent)!=0 && strcmp(part.right,prevParent)!=0)
-      return false;
-    char *parentData = new char[65];
-    combin(part.left,part.right,parentData);
 
-    // Parent in proof is incorrect
-    if( strcmp(parentData,part.parent) != 0 )
-      return false;
-
-    prevParent = parentData;
   }
 
-  return strcmp(prevParent,expectedMerkleRoot) == 0;
+  bool valid = strcmp(leaf,expectedMerkleRoot) == 0;
+  free(leaf);
+  return valid;
 }
 
 class merkletree{
 public:
   vector<char*> tree;
-
-  // declare function
-  //vector<char*> computeTree(void (*combineFn)(char*,char*,char*),vector<char*> leaves);
 
   merkletree(){}
   merkletree(vector<char*> leaves){
@@ -159,26 +150,35 @@ public:
 
   vector<ProofNode> proof(char* leafData){
     int idx = findLeaf(tree,leafData);
-    //printf("idx %d\n",idx);
     if(idx == -1)
       return vector<ProofNode>();
-    int proofArrSize = floor( log(tree.size())/ log(2) );
-
+    int proofArrSize = floor( log(tree.size())/ log(2) )+1;
     vector<ProofNode> proof(proofArrSize);
-    int proofIdx = 0;
-    while(idx > 0 ){
-      idx = getParent(tree,idx);
-      int left = getLeft(tree,idx);
-      int right = getRight(tree,idx);
 
-      proof[proofIdx++] = ProofNode(tree[left],tree[right],tree[idx]);
+    // record seld
+    int proofIdx = 0;
+
+
+    while(idx > 0 ){
+
+
+      idx = getBro(tree,idx);
+      proof[proofIdx].isRight = idx%2==0;
+      proof[proofIdx++].hash = tree[idx];
+      idx = getParent(tree,idx);
     }
 
+    // push root
+    proof[proofIdx].isRight = false;
+    proof[proofIdx++].hash = tree[idx];
 
-	proof.resize(proofIdx);
+
+	  proof.resize(proofIdx);
 
     return proof;
   }
+
+
 	void pushleaf(char* leaf){
 		pushleafworker(combin,leaf);
 	}

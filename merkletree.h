@@ -1,8 +1,6 @@
 #include "binarytree.h"
 #include <string.h>
 #include <iostream>
-#include <openssl/sha.h>
-#include <cstdio>
 
 #include "argon2ref/blake2.h"
 #include "argon2ref/blake2-impl.h"
@@ -24,7 +22,6 @@ void calBlake2(char* inp,char out_buff[BLAKE2_LENGTH])
     {
         sprintf(out_buff + (i * 2), "%02x", hash[i]);
     }
-    out_buff[BLAKE2_LENGTH] = 0;
 }
 
 using namespace std;
@@ -70,8 +67,6 @@ vector<ProofNode> deserialize(const char* strdata) // Reads the given file and a
 // combin and hash by sha256
 static void combin(char* leftData,char* rightData,char out_buff[BLAKE2_LENGTH+1])
 {
-
-//  unsigned char hash[SHA256_DIGEST_LENGTH];
     unsigned char hash[BLAKE2_DIGEST_LENGTH]; // 128/8
     ablake2b_state s;
     ablake2b_init(&s,BLAKE2_LENGTH);
@@ -83,7 +78,6 @@ static void combin(char* leftData,char* rightData,char out_buff[BLAKE2_LENGTH+1]
     {
         sprintf(out_buff + (i * 2), "%02x", hash[i]);
     }
-    out_buff[BLAKE2_LENGTH] = 0;
 }
 
 bool verifyProof(char* verifyLeaf,char* expectedMerkleRoot,vector<ProofNode> proof)
@@ -145,24 +139,6 @@ public:
         return tree[0];
     }
 
-//    void calSHA256(char* inp,char out_buff[65])
-//    {
-//        unsigned char hash[SHA256_DIGEST_LENGTH];
-//        SHA256_CTX sha256;
-//        SHA256_Init(&sha256);
-//        SHA256_Update(&sha256, inp, strlen(inp));
-//        SHA256_Final(hash, &sha256);
-//
-//        //char buffx[65];
-//        for(int i = 0; i < SHA256_DIGEST_LENGTH; i++)
-//        {
-//            sprintf(out_buff + (i * 2), "%02x", hash[i]);
-//        }
-//        out_buff[64] = 0;
-//    }
-
-
-
     vector<char*> computeTree(void (*combineFn)(char*,char*,char*),vector<char*> leaves)
     {
         // compute nodeCount and create vector<T> tree
@@ -173,18 +149,16 @@ public:
         // deep copy
         for(int i = 0 ; i<leaves.size(); i++)
         {
-            tree[delta + i] = new char[BLAKE2_LENGTH+1];
+            tree[delta + i] = new char[BLAKE2_LENGTH];
             memcpy(tree[delta + i],leaves[i],BLAKE2_LENGTH);
-            tree[delta + i][BLAKE2_LENGTH] = 0;
         }
         int idx = nodeCount-1;
         while(idx > 0)
         {
             int parent = (idx -1)/2;
 
-            tree[parent] = new char[BLAKE2_LENGTH+1];
+            tree[parent] = new char[BLAKE2_LENGTH];
             combineFn(tree[idx-1],tree[idx],tree[parent]);
-            tree[parent][BLAKE2_LENGTH] = 0;
 
             idx-=2;
         }
@@ -205,11 +179,8 @@ public:
         // record seld
         int proofIdx = 0;
 
-
         while(idx > 0 )
         {
-
-
             idx = getBro(tree,idx);
             proof[proofIdx].isRight = idx%2==0;
             proof[proofIdx++].hash = tree[idx];
@@ -237,27 +208,24 @@ public:
     {
 
         // push two
-        tree.push_back(new char[BLAKE2_LENGTH+1]);
-        tree.push_back(new char[BLAKE2_LENGTH+1]);
+        tree.push_back(new char[BLAKE2_LENGTH]);
+        tree.push_back(new char[BLAKE2_LENGTH]);
 
         int pidx = getParent(tree,tree.size()-1);
 
         // push parent and newleaf
-        memcpy(tree[tree.size()-2],tree[pidx],BLAKE2_LENGTH+1);
-        memcpy(tree[tree.size()-1],leaf,BLAKE2_LENGTH+1);
+        memcpy(tree[tree.size()-2],tree[pidx],BLAKE2_LENGTH);
+        memcpy(tree[tree.size()-1],leaf,BLAKE2_LENGTH);
 
         // climb up and compute
         int idx = tree.size()-1;
         while(idx > 0)
         {
             idx = getParent(tree,idx);
-            //cout<<&combineFn<<'\n';
             char *buff = new char[BLAKE2_LENGTH+1];
             combineFn(tree[getLeft(tree,idx)],tree[getRight(tree,idx)],buff);
             tree[idx] = buff;
         }
-
-        // done!
     }
 
 
